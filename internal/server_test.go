@@ -18,7 +18,7 @@ func TestDirectoryListingIgnoresCacheValidators(t *testing.T) {
 		t.Fatalf("write README.md: %v", err)
 	}
 
-	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil)
+	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "auto")
 	handler := server.newHandler(http.Dir(tmpDir))
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -46,7 +46,7 @@ func TestRegularFileStillSupportsConditionalRequests(t *testing.T) {
 		t.Fatalf("write plain.txt: %v", err)
 	}
 
-	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil)
+	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "auto")
 	handler := server.newHandler(http.Dir(tmpDir))
 
 	req := httptest.NewRequest(http.MethodGet, "/plain.txt", nil)
@@ -68,7 +68,7 @@ func TestMarkdownResponsesDisableCaching(t *testing.T) {
 		t.Fatalf("write README.md: %v", err)
 	}
 
-	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil)
+	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "auto")
 	handler := server.newHandler(http.Dir(tmpDir))
 
 	req := httptest.NewRequest(http.MethodGet, "/README.md", nil)
@@ -100,7 +100,7 @@ func TestCustomCSSIsServedAtStableRoute(t *testing.T) {
 		t.Fatalf("write brand.css: %v", err)
 	}
 
-	server := NewServer("localhost", 6419, false, false, false, NewParser(), []string{cssPath})
+	server := NewServer("localhost", 6419, false, false, false, NewParser(), []string{cssPath}, "auto")
 	handler := server.newHandler(http.Dir(tmpDir))
 
 	req := httptest.NewRequest(http.MethodGet, "/custom/css/0.css", nil)
@@ -127,7 +127,7 @@ func TestCustomCSSUnknownIndexReturns404(t *testing.T) {
 		t.Fatalf("write brand.css: %v", err)
 	}
 
-	server := NewServer("localhost", 6419, false, false, false, NewParser(), []string{cssPath})
+	server := NewServer("localhost", 6419, false, false, false, NewParser(), []string{cssPath}, "auto")
 	handler := server.newHandler(http.Dir(tmpDir))
 
 	for _, path := range []string{"/custom/css/5.css", "/custom/css/nope.css"} {

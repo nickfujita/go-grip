@@ -21,16 +21,18 @@ import (
 )
 
 type Server struct {
-	parser       *Parser
-	boundingBox  bool
-	host         string
-	port         int
-	browser      bool
-	enableReload bool
-	customCSS    []string
+	parser        *Parser
+	boundingBox   bool
+	host          string
+	port          int
+	browser       bool
+	enableReload  bool
+	customCSS     []string
+	theme         string
+	resolvedTheme themeConfig
 }
 
-func NewServer(host string, port int, boundingBox bool, browser bool, enableReload bool, parser *Parser, customCSS []string) *Server {
+func NewServer(host string, port int, boundingBox bool, browser bool, enableReload bool, parser *Parser, customCSS []string, theme string) *Server {
 	return &Server{
 		host:         host,
 		port:         port,
@@ -39,6 +41,23 @@ func NewServer(host string, port int, boundingBox bool, browser bool, enableRelo
 		enableReload: enableReload,
 		parser:       parser,
 		customCSS:    customCSS,
+		theme:        theme,
+	}
+}
+
+// themeData returns the template fields describing the active theme: the render
+// mode, the base for a custom theme, and the route the custom stylesheet is
+// served at. It falls back to "auto" when the theme has not been resolved (e.g.
+// a handler built directly in tests without calling Serve).
+func (s *Server) themeData() (mode, base, customRoute string) {
+	cfg := s.resolvedTheme
+	switch cfg.mode {
+	case "custom":
+		return "custom", cfg.base, "/custom/theme.css"
+	case "light", "dark":
+		return cfg.mode, "", ""
+	default:
+		return "auto", "", ""
 	}
 }
 
@@ -72,6 +91,12 @@ func (s *Server) Serve(file string) error {
 	if err := validateCustomCSS(s.customCSS); err != nil {
 		return err
 	}
+
+	cfg, err := resolveTheme(s.theme)
+	if err != nil {
+		return err
+	}
+	s.resolvedTheme = cfg
 
 	directory := path.Dir(file)
 	filename := path.Base(file)
@@ -128,6 +153,7 @@ func (s *Server) newHandler(dir http.Dir) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.FileServer(http.FS(defaults.StaticFiles)))
 	mux.HandleFunc("/custom/css/", s.serveCustomCSS)
+	mux.HandleFunc("/custom/theme.css", s.serveCustomTheme)
 
 	regex := regexp.MustCompile(`(?i)\.md$`)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -147,12 +173,16 @@ func (s *Server) newHandler(dir http.Dir) http.Handler {
 					return
 				}
 
+				themeMode, themeBase, customTheme := s.themeData()
 				err = serveTemplate(w, htmlStruct{
 					Content:      string(htmlContent),
 					BoundingBox:  s.boundingBox,
 					CssCodeLight: getCssCode("github"),
 					CssCodeDark:  getCssCode("github-dark"),
 					CustomCSS:    s.customCSSRoutes(),
+					ThemeMode:    themeMode,
+					ThemeBase:    themeBase,
+					CustomTheme:  customTheme,
 				})
 				if err != nil {
 					log.Fatal(err)
@@ -191,6 +221,19 @@ func (s *Server) serveCustomCSS(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, s.customCSS[index])
 }
 
+// serveCustomTheme serves the resolved custom theme stylesheet at
+// /custom/theme.css. It 404s unless a custom theme is active.
+func (s *Server) serveCustomTheme(w http.ResponseWriter, r *http.Request) {
+	if s.resolvedTheme.mode != "custom" || s.resolvedTheme.customPath == "" {
+		http.NotFound(w, r)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/css; charset=utf-8")
+	setNoCacheHeaders(w)
+	http.ServeFile(w, r, s.resolvedTheme.customPath)
+}
+
 func readToString(dir http.Dir, filename string) ([]byte, error) {
 	f, err := dir.Open(filename)
 	if err != nil {
@@ -213,6 +256,9 @@ type htmlStruct struct {
 	CssCodeLight string
 	CssCodeDark  string
 	CustomCSS    []string
+	ThemeMode    string
+	ThemeBase    string
+	CustomTheme  string
 }
 
 func serveTemplate(w http.ResponseWriter, html htmlStruct) error {

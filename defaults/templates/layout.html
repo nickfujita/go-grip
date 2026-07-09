@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>go-grip - markdown preview</title>
     <link rel="icon" type="image/x-icon" href="/static/images/favicon.ico" />
+    {{if eq .ThemeMode "custom"}}
+    {{if eq .ThemeBase "light"}}
+    <link rel="stylesheet" href="/static/css/github-markdown-light.css" />
+    {{else if eq .ThemeBase "dark"}}
+    <link rel="stylesheet" href="/static/css/github-markdown-dark.css" />
+    {{end}}
+    <link rel="stylesheet" href="{{ .CustomTheme }}" />
+    {{if eq .ThemeBase "light"}}
+    <style>{{ .CssCodeLight }}</style>
+    {{else}}
+    <style>{{ .CssCodeDark }}</style>
+    {{end}}
+    {{else if eq .ThemeMode "light"}}
+    <link rel="stylesheet" href="/static/css/github-markdown-light.css" />
+    <style>{{ .CssCodeLight }}</style>
+    {{else if eq .ThemeMode "dark"}}
+    <link rel="stylesheet" href="/static/css/github-markdown-dark.css" />
+    <style>{{ .CssCodeDark }}</style>
+    {{else}}
     <link
       id="theme-light"
       rel="stylesheet"
@@ -19,6 +38,7 @@
     />
     <style id="highlight-light" media="(prefers-color-scheme: light)">{{ .CssCodeLight }}</style>
     <style id="highlight-dark" media="(prefers-color-scheme: dark)">{{ .CssCodeDark }}</style>
+    {{end}}
     <link rel="stylesheet" href="/static/css/github-print.css" media="print" />
     <link rel="stylesheet" href="/static/css/github-mermaid.css" />
     <link rel="stylesheet" href="/static/css/github-clipboard.css" />
@@ -27,7 +47,9 @@
     {{range .CustomCSS}}
     <link rel="stylesheet" href="{{ . }}" />
     {{end}}
+    {{if eq .ThemeMode "auto"}}
     <script src="/static/js/theme-switch.js"></script>
+    {{end}}
     <script src="/static/js/clipboard-copy.js"></script>
     <script src="/static/js/mathjax-options.js"></script>
     <script src="/static/js/tex-mml-chtml.js"></script>
@@ -36,9 +58,11 @@
   </head>
 
   <body class="markdown-body">
+    {{if eq .ThemeMode "auto"}}
     <button id="theme-toggle" class="theme-toggle" title="Toggle theme">
       <span class="theme-toggle-icon"></span>
     </button>
+    {{end}}
     <div class="container">
       <div {{if .BoundingBox }} class="container-inner" {{end}}>
         {{ .Content }}

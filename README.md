@@ -135,6 +135,34 @@ go-grip --css base.css --css overrides.css README.md
 
 A missing `--css` path fails immediately at startup with a clear error.
 
+### Custom themes
+
+Besides the built-in `light`, `dark`, and `auto` modes, `--theme` accepts a
+custom theme name. A name that is not one of the built-ins resolves to a
+stylesheet in your themes directory:
+
+```
+$XDG_CONFIG_HOME/go-grip/themes/<name>.css   # defaults to ~/.config/go-grip/themes/<name>.css
+```
+
+For example, with `~/.config/go-grip/themes/nightshade.css` in place:
+
+```bash
+go-grip --theme nightshade README.md
+```
+
+By default a custom theme **layers on top of the built-in dark base**, so you
+only need to write the overrides you care about. Change the base with an
+optional first-line directive:
+
+```css
+/* go-grip-base: light */   /* layer on the light base instead */
+/* go-grip-base: none */    /* no built-in base; your theme stands alone */
+```
+
+If the named theme file does not exist, startup fails with an error that lists
+the path it searched and the theme names that are available.
+
 To terminate the current server simply press `CTRL-C`.
 
 ## :pencil: Examples
