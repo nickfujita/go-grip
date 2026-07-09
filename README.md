@@ -123,6 +123,18 @@ To disable automatic browser reload on file changes (useful for stable editing):
 go-grip --no-reload README.md
 ```
 
+To layer your own styling on top of the built-in theme, pass one or more
+stylesheets with `--css`. Each file is linked after the theme stylesheet, so its
+rules win the cascade. The flag is repeatable and files are applied in order:
+
+```bash
+go-grip --css brand.css README.md
+# or stack several
+go-grip --css base.css --css overrides.css README.md
+```
+
+A missing `--css` path fails immediately at startup with a clear error.
+
 To terminate the current server simply press `CTRL-C`.
 
 ## :pencil: Examples
