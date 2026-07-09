@@ -24,6 +24,9 @@
     <link rel="stylesheet" href="/static/css/github-clipboard.css" />
     <link rel="stylesheet" href="/static/css/mathjax.css" />
     <link rel="stylesheet" href="/static/css/theme-switch.css" />
+    {{range .CustomCSS}}
+    <link rel="stylesheet" href="{{ . }}" />
+    {{end}}
     <script src="/static/js/theme-switch.js"></script>
     <script src="/static/js/clipboard-copy.js"></script>
     <script src="/static/js/mathjax-options.js"></script>

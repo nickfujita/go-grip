@@ -7,8 +7,10 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -25,9 +27,10 @@ type Server struct {
 	port         int
 	browser      bool
 	enableReload bool
+	customCSS    []string
 }
 
-func NewServer(host string, port int, boundingBox bool, browser bool, enableReload bool, parser *Parser) *Server {
+func NewServer(host string, port int, boundingBox bool, browser bool, enableReload bool, parser *Parser, customCSS []string) *Server {
 	return &Server{
 		host:         host,
 		port:         port,
@@ -35,10 +38,41 @@ func NewServer(host string, port int, boundingBox bool, browser bool, enableRelo
 		browser:      browser,
 		enableReload: enableReload,
 		parser:       parser,
+		customCSS:    customCSS,
 	}
 }
 
+// customCSSRoutes returns the stable in-app routes that each user stylesheet is
+// served at, in the same order they were passed on the command line.
+func (s *Server) customCSSRoutes() []string {
+	routes := make([]string, len(s.customCSS))
+	for i := range s.customCSS {
+		routes[i] = fmt.Sprintf("/custom/css/%d.css", i)
+	}
+	return routes
+}
+
+// validateCustomCSS ensures every user stylesheet exists and is a regular file
+// before the server starts, so a typo fails loudly instead of 404-ing at
+// request time.
+func validateCustomCSS(paths []string) error {
+	for _, p := range paths {
+		info, err := os.Stat(p)
+		if err != nil {
+			return fmt.Errorf("custom CSS file not found: %s", p)
+		}
+		if info.IsDir() {
+			return fmt.Errorf("custom CSS path is a directory, not a file: %s", p)
+		}
+	}
+	return nil
+}
+
 func (s *Server) Serve(file string) error {
+	if err := validateCustomCSS(s.customCSS); err != nil {
+		return err
+	}
+
 	directory := path.Dir(file)
 	filename := path.Base(file)
 
@@ -93,6 +127,7 @@ func (s *Server) newHandler(dir http.Dir) http.Handler {
 	fileServer := http.FileServer(dir)
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.FileServer(http.FS(defaults.StaticFiles)))
+	mux.HandleFunc("/custom/css/", s.serveCustomCSS)
 
 	regex := regexp.MustCompile(`(?i)\.md$`)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +152,7 @@ func (s *Server) newHandler(dir http.Dir) http.Handler {
 					BoundingBox:  s.boundingBox,
 					CssCodeLight: getCssCode("github"),
 					CssCodeDark:  getCssCode("github-dark"),
+					CustomCSS:    s.customCSSRoutes(),
 				})
 				if err != nil {
 					log.Fatal(err)
@@ -136,6 +172,23 @@ func (s *Server) newHandler(dir http.Dir) http.Handler {
 	})
 
 	return mux
+}
+
+// serveCustomCSS serves the user stylesheet registered at
+// /custom/css/<index>.css, where <index> is the position of the --css flag on
+// the command line.
+func (s *Server) serveCustomCSS(w http.ResponseWriter, r *http.Request) {
+	name := strings.TrimPrefix(r.URL.Path, "/custom/css/")
+	name = strings.TrimSuffix(name, ".css")
+	index, err := strconv.Atoi(name)
+	if err != nil || index < 0 || index >= len(s.customCSS) {
+		http.NotFound(w, r)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/css; charset=utf-8")
+	setNoCacheHeaders(w)
+	http.ServeFile(w, r, s.customCSS[index])
 }
 
 func readToString(dir http.Dir, filename string) ([]byte, error) {
@@ -159,6 +212,7 @@ type htmlStruct struct {
 	BoundingBox  bool
 	CssCodeLight string
 	CssCodeDark  string
+	CustomCSS    []string
 }
 
 func serveTemplate(w http.ResponseWriter, html htmlStruct) error {
