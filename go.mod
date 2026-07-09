@@ -1,4 +1,4 @@
-module github.com/chrishrb/go-grip
+module github.com/nickfujita/go-grip
 
 go 1.25
 
