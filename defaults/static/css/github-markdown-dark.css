@@ -1124,3 +1124,40 @@
   margin-top: 0 !important;
 }
 
+
+/* ==== Spellguard design-system re-skin (appended override; palette + type
+   from the CLI TUI workbench system). Source of truth for tokens:
+   spellguard-1/docs/reviews/cli-tui-workbench-takeover/phase2-plan.html ==== */
+html, body { background: #0b0d12; }
+.container-inner { background: #11141b; border-color: #262b38 !important; border-radius: 8px; }
+.markdown-body {
+  color: #eef3f9;
+  background-color: #11141b;
+  font-family: "Avenir Next", Avenir, "Segoe UI", Seravek, system-ui, sans-serif;
+}
+.markdown-body a { color: #907cff; }
+.markdown-body h1 { border-bottom: none; letter-spacing: -0.015em; }
+.markdown-body h2 {
+  font-family: ui-monospace, "DejaVu Sans Mono", "SF Mono", Menlo, Consolas, monospace;
+  font-size: 15px; color: #907cff; letter-spacing: 0.03em;
+  border-bottom: none; border-top: 1px solid #262b38; padding-top: 16px; margin-top: 32px;
+}
+.markdown-body h3 { font-size: 17px; }
+.markdown-body code, .markdown-body tt {
+  font-family: ui-monospace, "DejaVu Sans Mono", "SF Mono", Menlo, Consolas, monospace;
+  color: #4fd8d8; background-color: #171b24;
+}
+.markdown-body pre { background-color: #0b0d12; border: 1px solid #262b38; border-radius: 8px; }
+.markdown-body pre code { color: #eef3f9; background: transparent; }
+.markdown-body table th {
+  font-family: ui-monospace, "DejaVu Sans Mono", "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px; color: #4fd8d8; letter-spacing: 0.08em; text-transform: uppercase;
+  background-color: #171b24; border-color: #262b38;
+}
+.markdown-body table td { border-color: #262b38; }
+.markdown-body table tr { background-color: #11141b; border-color: #262b38; }
+.markdown-body table tr:nth-child(2n) { background-color: #131720; }
+.markdown-body table td strong { color: #907cff; }
+.markdown-body blockquote { border-left: 3px solid #f5c451; background: #171b24; color: #8b90a0; border-radius: 0 6px 6px 0; padding: 10px 16px; }
+.markdown-body hr { background-color: #262b38; }
+.markdown-body li::marker { color: #907cff; }
