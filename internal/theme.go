@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/nickfujita/go-grip/defaults"
 )
 
 // builtinThemes are the reserved theme names that do not resolve to a file on
@@ -16,10 +18,43 @@ var builtinThemes = map[string]bool{"auto": true, "light": true, "dark": true}
 
 // themeConfig is the resolved theme for a server: either one of the built-in
 // modes (auto/light/dark) or a custom stylesheet layered on a built-in base.
+// A custom theme is sourced either from disk (customPath) or from a theme
+// embedded in the binary (customContent).
 type themeConfig struct {
-	mode       string // "auto" | "light" | "dark" | "custom"
-	base       string // for custom mode: "light" | "dark" | "none"
-	customPath string // filesystem path to the custom theme stylesheet
+	mode          string // "auto" | "light" | "dark" | "custom"
+	base          string // for custom mode: "light" | "dark" | "none"
+	customPath    string // filesystem path to the custom theme stylesheet
+	customContent []byte // embedded stylesheet bytes for a built-in custom theme
+}
+
+// embeddedTheme returns the bytes of a custom theme compiled into the binary
+// (e.g. "nightshade"), reporting whether one exists for the given name.
+func embeddedTheme(name string) ([]byte, bool) {
+	css, err := defaults.Themes.ReadFile("themes/" + name + ".css")
+	if err != nil {
+		return nil, false
+	}
+	return css, true
+}
+
+// embeddedThemeNames lists the names of the custom themes compiled into the
+// binary, sorted for stable output.
+func embeddedThemeNames() []string {
+	entries, err := defaults.Themes.ReadDir("themes")
+	if err != nil {
+		return nil
+	}
+	var names []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		if strings.HasSuffix(e.Name(), ".css") {
+			names = append(names, strings.TrimSuffix(e.Name(), ".css"))
+		}
+	}
+	sort.Strings(names)
+	return names
 }
 
 // themesDir returns the directory custom themes are loaded from:
@@ -84,12 +119,23 @@ func resolveTheme(theme string) (themeConfig, error) {
 		return themeConfig{mode: theme}, nil
 	}
 
+	// Themes compiled into the binary take precedence and need no external
+	// file, so `--theme nightshade` works out of the box.
+	if css, ok := embeddedTheme(theme); ok {
+		return themeConfig{
+			mode:          "custom",
+			base:          parseBaseDirective(css),
+			customContent: css,
+		}, nil
+	}
+
 	dir := themesDir()
 	path := filepath.Join(dir, theme+".css")
 	css, err := os.ReadFile(path)
 	if err != nil {
+		available := append(embeddedThemeNames(), availableThemes(dir)...)
 		hint := "none found"
-		if available := availableThemes(dir); len(available) > 0 {
+		if len(available) > 0 {
 			hint = strings.Join(available, ", ")
 		}
 		return themeConfig{}, fmt.Errorf(

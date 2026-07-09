@@ -55,6 +55,65 @@ func TestResolveThemeCustom(t *testing.T) {
 	}
 }
 
+func TestResolveThemeBuiltinEmbedded(t *testing.T) {
+	// A theme compiled into the binary resolves with no external file, even
+	// when the on-disk themes directory is empty.
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+
+	cfg, err := resolveTheme("nightshade")
+	if err != nil {
+		t.Fatalf("resolveTheme(nightshade): %v", err)
+	}
+	if cfg.mode != "custom" {
+		t.Fatalf("mode = %q, want custom", cfg.mode)
+	}
+	if cfg.base != "dark" {
+		t.Fatalf("base = %q, want dark", cfg.base)
+	}
+	if cfg.customPath != "" {
+		t.Fatalf("embedded theme should have no customPath, got %q", cfg.customPath)
+	}
+	if len(cfg.customContent) == 0 {
+		t.Fatal("embedded theme should carry its stylesheet bytes")
+	}
+	if !strings.Contains(string(cfg.customContent), "markdown-body") {
+		t.Fatalf("embedded nightshade content looks wrong: %q", cfg.customContent)
+	}
+}
+
+func TestResolveThemeMissingListsEmbedded(t *testing.T) {
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	_, err := resolveTheme("does-not-exist")
+	if err == nil {
+		t.Fatal("expected error for missing theme")
+	}
+	if !strings.Contains(err.Error(), "nightshade") {
+		t.Fatalf("error should list embedded theme names, got: %s", err.Error())
+	}
+}
+
+func TestServeCustomThemeEmbedded(t *testing.T) {
+	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "nightshade")
+	cfg, err := resolveTheme("nightshade")
+	if err != nil {
+		t.Fatalf("resolveTheme(nightshade): %v", err)
+	}
+	server.resolvedTheme = cfg
+	handler := server.newHandler(http.Dir(t.TempDir()))
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/custom/theme.css", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	if got := rec.Header().Get("Content-Type"); !strings.Contains(got, "text/css") {
+		t.Fatalf("expected text/css, got %q", got)
+	}
+	if !strings.Contains(rec.Body.String(), "markdown-body") {
+		t.Fatalf("expected served embedded theme body, got %q", rec.Body.String())
+	}
+}
+
 func TestResolveThemeMissingListsSearchPathAndAvailable(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("XDG_CONFIG_HOME", dir)
