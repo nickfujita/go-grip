@@ -222,15 +222,26 @@ func (s *Server) serveCustomCSS(w http.ResponseWriter, r *http.Request) {
 }
 
 // serveCustomTheme serves the resolved custom theme stylesheet at
-// /custom/theme.css. It 404s unless a custom theme is active.
+// /custom/theme.css. The stylesheet is sourced from the binary (a built-in
+// theme like nightshade) or from disk. It 404s unless a custom theme is active.
 func (s *Server) serveCustomTheme(w http.ResponseWriter, r *http.Request) {
-	if s.resolvedTheme.mode != "custom" || s.resolvedTheme.customPath == "" {
+	if s.resolvedTheme.mode != "custom" {
 		http.NotFound(w, r)
 		return
 	}
 
 	w.Header().Set("Content-Type", "text/css; charset=utf-8")
 	setNoCacheHeaders(w)
+
+	if s.resolvedTheme.customContent != nil {
+		//nolint:errcheck
+		w.Write(s.resolvedTheme.customContent)
+		return
+	}
+	if s.resolvedTheme.customPath == "" {
+		http.NotFound(w, r)
+		return
+	}
 	http.ServeFile(w, r, s.resolvedTheme.customPath)
 }
 

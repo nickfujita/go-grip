@@ -77,7 +77,21 @@ func main() {
 
 ## :rocket: Getting started
 
-To install go-grip, simply:
+### Prebuilt release binary (no Go toolchain required)
+
+Each tagged release publishes a self-contained `linux-amd64` binary (and a
+`darwin-arm64` one). Drop it into `~/.local/bin`:
+
+```bash
+mkdir -p ~/.local/bin
+curl -fsSL https://github.com/nickfujita/go-grip/releases/latest/download/go-grip-linux-amd64 -o ~/.local/bin/go-grip
+chmod +x ~/.local/bin/go-grip
+# make sure ~/.local/bin is on your PATH
+```
+
+For macOS (Apple Silicon) swap the asset name for `go-grip-darwin-arm64`.
+
+### With the Go toolchain
 
 ```bash
 go install github.com/nickfujita/go-grip@latest
@@ -135,11 +149,21 @@ go-grip --css base.css --css overrides.css README.md
 
 A missing `--css` path fails immediately at startup with a clear error.
 
+### Built-in `nightshade` theme
+
+`nightshade` is a dark theme **compiled into the binary** — a deep near-black
+canvas with muted violet headings/links, teal monospace code, and a warm amber
+blockquote accent. It needs no external file:
+
+```bash
+go-grip --theme nightshade README.md
+```
+
 ### Custom themes
 
-Besides the built-in `light`, `dark`, and `auto` modes, `--theme` accepts a
-custom theme name. A name that is not one of the built-ins resolves to a
-stylesheet in your themes directory:
+Besides the built-in `light`, `dark`, `auto`, and `nightshade` themes, `--theme`
+accepts a custom theme name. A name that is not one of the built-ins resolves to
+a stylesheet in your themes directory:
 
 ```
 $XDG_CONFIG_HOME/go-grip/themes/<name>.css   # defaults to ~/.config/go-grip/themes/<name>.css
@@ -164,6 +188,21 @@ If the named theme file does not exist, startup fails with an error that lists
 the path it searched and the theme names that are available.
 
 To terminate the current server simply press `CTRL-C`.
+
+### Running as a service
+
+To keep a go-grip preview running in the background, install the systemd
+**user** unit shipped in [`contrib/`](contrib/). It runs
+`go-grip -b=false --theme nightshade` from your home directory:
+
+```bash
+mkdir -p ~/.config/systemd/user
+cp contrib/gogrip.service ~/.config/systemd/user/
+loginctl enable-linger "$USER"          # keep it running after you log out
+systemctl --user enable --now gogrip.service
+```
+
+See [`contrib/README.md`](contrib/README.md) for details.
 
 ## :pencil: Examples
 
