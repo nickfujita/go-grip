@@ -19,6 +19,7 @@ var rootCmd = &cobra.Command{
 		noReload, _ := cmd.Flags().GetBool("no-reload")
 		css, _ := cmd.Flags().GetStringArray("css")
 		theme, _ := cmd.Flags().GetString("theme")
+		ignore, _ := cmd.Flags().GetStringArray("ignore")
 
 		var file string
 		if len(args) == 1 {
@@ -26,7 +27,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		parser := internal.NewParser()
-		server := internal.NewServer(host, port, boundingBox, browser, !noReload, parser, css, theme)
+		server := internal.NewServer(host, port, boundingBox, browser, !noReload, parser, css, theme, ignore)
 		return server.Serve(file)
 	},
 }
@@ -46,4 +47,5 @@ func init() {
 	rootCmd.Flags().Bool("no-reload", false, "Disable automatic browser reload on file changes")
 	rootCmd.Flags().StringArray("css", nil, "Link an additional CSS stylesheet after the theme (repeatable)")
 	rootCmd.Flags().String("theme", "auto", "Theme: light, dark, auto, or a custom theme name")
+	rootCmd.Flags().StringArray("ignore", internal.DefaultIgnores, "Directory the file watcher skips: a bare name/glob matches at any depth, a path glob is relative to the served directory (repeatable; setting the flag replaces the defaults)")
 }

@@ -93,7 +93,7 @@ func TestResolveThemeMissingListsEmbedded(t *testing.T) {
 }
 
 func TestServeCustomThemeEmbedded(t *testing.T) {
-	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "nightshade")
+	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "nightshade", nil)
 	cfg, err := resolveTheme("nightshade")
 	if err != nil {
 		t.Fatalf("resolveTheme(nightshade): %v", err)
@@ -222,7 +222,7 @@ func TestServeCustomThemeRoute(t *testing.T) {
 	}
 
 	// Custom theme active: route serves the stylesheet.
-	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "midnight")
+	server := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "midnight", nil)
 	server.resolvedTheme = themeConfig{mode: "custom", base: "dark", customPath: themeFile}
 	handler := server.newHandler(http.Dir(tmpDir))
 
@@ -240,7 +240,7 @@ func TestServeCustomThemeRoute(t *testing.T) {
 	}
 
 	// No custom theme active: route 404s.
-	plain := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "auto")
+	plain := NewServer("localhost", 6419, false, false, false, NewParser(), nil, "auto", nil)
 	plainHandler := plain.newHandler(http.Dir(tmpDir))
 	rec2 := httptest.NewRecorder()
 	plainHandler.ServeHTTP(rec2, httptest.NewRequest(http.MethodGet, "/custom/theme.css", nil))

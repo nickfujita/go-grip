@@ -14,10 +14,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/aarol/reload"
 	chroma_html "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/nickfujita/go-grip/defaults"
+	"github.com/nickfujita/go-grip/internal/reload"
 )
 
 type Server struct {
@@ -29,10 +29,11 @@ type Server struct {
 	enableReload  bool
 	customCSS     []string
 	theme         string
+	ignoreDirs    []string
 	resolvedTheme themeConfig
 }
 
-func NewServer(host string, port int, boundingBox bool, browser bool, enableReload bool, parser *Parser, customCSS []string, theme string) *Server {
+func NewServer(host string, port int, boundingBox bool, browser bool, enableReload bool, parser *Parser, customCSS []string, theme string, ignoreDirs []string) *Server {
 	return &Server{
 		host:         host,
 		port:         port,
@@ -42,6 +43,7 @@ func NewServer(host string, port int, boundingBox bool, browser bool, enableRelo
 		parser:       parser,
 		customCSS:    customCSS,
 		theme:        theme,
+		ignoreDirs:   ignoreDirs,
 	}
 }
 
@@ -104,6 +106,7 @@ func (s *Server) Serve(file string) error {
 	var reloadMiddleware *reload.Reloader
 	if s.enableReload {
 		reloadMiddleware = reload.New(directory)
+		reloadMiddleware.ShouldIgnore = NewIgnoreMatcher(directory, s.ignoreDirs)
 		reloadMiddleware.DebugLog = log.New(io.Discard, "", 0)
 		// Fix WebSocket CORS issues for development
 		reloadMiddleware.Upgrader.CheckOrigin = func(r *http.Request) bool {
