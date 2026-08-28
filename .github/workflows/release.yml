@@ -27,6 +27,7 @@ jobs:
         run: |
           mkdir -p dist
           GOOS=linux  GOARCH=amd64 go build -trimpath -o dist/go-grip-linux-amd64 .
+          GOOS=linux  GOARCH=arm64 go build -trimpath -o dist/go-grip-linux-arm64 .
           GOOS=darwin GOARCH=arm64 go build -trimpath -o dist/go-grip-darwin-arm64 .
 
       - name: Publish release

@@ -79,8 +79,10 @@ func main() {
 
 ### Prebuilt release binary (no Go toolchain required)
 
-Each tagged release publishes a self-contained `linux-amd64` binary (and a
-`darwin-arm64` one). Drop it into `~/.local/bin`:
+Each tagged release publishes self-contained binaries for Linux AMD64
+(`go-grip-linux-amd64`), Linux ARM64 (`go-grip-linux-arm64`), and macOS Apple
+Silicon (`go-grip-darwin-arm64`). Drop the Linux AMD64 binary into
+`~/.local/bin`:
 
 ```bash
 mkdir -p ~/.local/bin
@@ -89,7 +91,8 @@ chmod +x ~/.local/bin/go-grip
 # make sure ~/.local/bin is on your PATH
 ```
 
-For macOS (Apple Silicon) swap the asset name for `go-grip-darwin-arm64`.
+For Linux ARM64, use `go-grip-linux-arm64`. For macOS Apple Silicon, use
+`go-grip-darwin-arm64`.
 
 ### With the Go toolchain
 
